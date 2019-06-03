@@ -32,22 +32,22 @@ replace party=0 if party==.
 
 // Coalition Andres Pastrana (Winner in 1998)
 gen politc=1 if codigo_partido==2 // Partido Conservador
-replace politc=1 if codigo_partido==6 // Movimiento de Nacional Progresista **
 replace politc=1 if codigo_partido==10 // Movimiento de Salvación Nacional
 replace politc=1 if codigo_partido==11 // Movimiento Fuerza Progresista
-replace politc=1 if codigo_partido==12 // Movimiento Nueva Colombia **
+replace politc=1 if codigo_partido==103 // Movimiento Nacional Conservador
 replace politc=1 if codigo_partido==14 // Movimiento Conservatismo Independiente
 replace politc=1 if codigo_partido==28 // Movimiento Nueva Fuerza Democratica
 replace politc=1 if codigo_partido==31 // Movimiento de Participación Popular
+replace politc=1 if codigo_partido==49 // Movimiento Unionista **
 replace politc=1 if codigo_partido==33 // Movimiento Seriedad Colombia **
 replace politc=1 if codigo_partido==39 // Movimiento Fuerza Colombia **
 replace politc=1 if codigo_partido==41 // Movimiento Cambio Radical **
 replace politc=1 if codigo_partido==44 // Movimiento de Colombia Mi País **
-replace politc=1 if codigo_partido==49 // Movimiento Unionista **
+replace politc=1 if codigo_partido==12 // Movimiento Nueva Colombia **
+replace politc=1 if codigo_partido==6 // Movimiento de Nacional Progresista **
 replace politc=1 if codigo_partido==55 // Movimiento Renovador de Acción **
 replace politc=1 if codigo_partido==58 // MOVIMIENTO DEJEN JUGAR AL MORENO **
 replace politc=1 if codigo_partido==61 // Movimiento Ciudadanos por Boyaca **
-replace politc=1 if codigo_partido==103 // Movimiento Nacional Conservador
 replace politc=0 if politc==. //Everything else
 gen party=1 if codigo_partido==2 // Only Ruling Party, excluding coalition
 replace party=0 if party==.
@@ -85,12 +85,12 @@ replace party=0 if party==.
 // Coalition Juan Manuel Santos (Winner in 2010)
 gen politc=1 if codigo_partido1==2 // Partido Conservador
 replace politc=1 if codigo_partido1==198 // Partido de la U
-replace politc=1 if codigo_partido1==165 // Partido Cambio Radical
-replace politc=1 if codigo_partido1==35 // Partido Convergencia Ciudadana
-replace politc=1 if codigo_partido1==163 // Partido Colombia Democratica
-replace politc=1 if codigo_partido1==195 // Partido Alas Equipo Colombia
-replace politc=1 if codigo_partido1==155 // Partido Movimiento Colombia Viva
-
+replace politc=1 if codigo_partido1==165 // Partido Cambio Radical **
+replace politc=1 if codigo_partido1==35 // Partido Convergencia Ciudadana **
+replace politc=1 if codigo_partido1==163 // Partido Colombia Democratica **
+replace politc=1 if codigo_partido1==195 // Partido Alas Equipo Colombia **
+replace politc=1 if codigo_partido1==155 // Partido Movimiento Colombia Viva **
+replace politc=0 if politc==. //Everything else
 
 // Computing Voting Shares and Margins
 
@@ -111,7 +111,9 @@ keep if curules==1 //Keeping only the winner
 //Generating the margin for the RD
 gen marginRD=margin12 if politc==1
 replace marginRD=margin12*(-1) if politc==0
-keep year coddpto codmpio municipio codigo_partido nombre primer_apellido votos curules politc party totalvotes sharevotes maxshare margin margin12 coalition coal_runner marginRD
+keep year coddpto codmpio municipio codigo_partido nombre primer_apellido votos curules politc totalvotes sharevotes maxshare margin margin12 coalition coal_runner marginRD
+keep year coddpto codmpio municipio codigo_partido nombre primer_apellido votos nid politc totalvotes sharevotes maxshare margin margin12 coalition coal_runner marginRD
+
 
 // Keeping only races that can be considered as random
 gen rdm=1 if politc!=coal_runner
@@ -136,11 +138,12 @@ replace politc_flip=1 if codigo_partido==14 // Movimiento Conservatismo Independ
 replace politc_flip=1 if codigo_partido==28 // Movimiento Nueva Fuerza Democratica
 replace politc_flip=1 if codigo_partido==31 // Movimiento de Participación Popular
 replace politc_flip=1 if codigo_partido==103 // Movimiento Nacional Conservador
+replace politc_flip=1 if codigo_partido==198 // Partido de La U
 replace politc_flip=0 if politc_flip==.
 keep codmpio politc_flip
 
 
-merge 1:1 codmpio using "C:\Users\JESUS\Documents\ITFD\Master Project\Night Lights, Electoral Cycles and Growth\Electoral Data\flip2003"
+merge 1:1 codmpio using "C:\Users\JESUS\Documents\ITFD\Master Project\Night Lights, Electoral Cycles and Growth\Electoral Data\flip2011"
 gen flip=1 if politc==politc_flip
 replace flip=0 if flip==.
 drop if _merge==2

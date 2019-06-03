@@ -33,7 +33,7 @@ nl_col_growth <- function(year1, year2, electoral){
   f_1993 <- merge(codes, f_1993, by="code")
   ###Taking fiscal accounts
   ##Tax Income 2000-2012
-  fiscal <- subset(Budget2000_2012, COD_CUE2=="A1000", select = c("coddep", "code", 2000:2012))
+  fiscal <- subset(Budget_2000_2017, CdigoCuenta=="A1000", select = c("coddep", "code", 2000:2015))
   fiscal <- melt(fiscal, id=c("coddep", "code"))
   colnames(fiscal) <- c("dpto", "code", "year", "taxes")
   ##Merging both Tax Income
@@ -49,7 +49,7 @@ nl_col_growth <- function(year1, year2, electoral){
   colnames(f_1993) <- c("code", "year", "cur_transfers")
   f_1993 <- merge(codes, f_1993, by="code")
    ##Current Transfers 2000-2012
-  transfers <- subset(Budget2000_2012, COD_CUE2=="A3010", select = c("coddep", "code", 2000:2012))
+  transfers <- subset(Budget_2000_2017, CdigoCuenta=="A3010", select = c("coddep", "code", 2000:2015))
   transfers <- melt(transfers, id=c("coddep", "code"))
   colnames(transfers) <- c("dpto", "code", "year", "cur_transfers")
   ##Merging Current Transfers
@@ -65,7 +65,7 @@ nl_col_growth <- function(year1, year2, electoral){
   colnames(f_1993) <- c("code", "year", "cap_transfers")
   f_1993 <- merge(codes, f_1993, by="code")
   ##Capital Transfers 2000-2012
-  transfers <- subset(Budget2000_2012, COD_CUE2=="D2000", select = c("coddep", "code", 2000:2012))
+  transfers <- subset(Budget_2000_2017, CdigoCuenta=="D2000", select = c("coddep", "code", 2000:2015))
   transfers <- melt(transfers, id=c("coddep", "code"))
   colnames(transfers) <- c("dpto", "code", "year", "cap_transfers")
   ##Merging Capital Transfers
@@ -83,7 +83,7 @@ nl_col_growth <- function(year1, year2, electoral){
   colnames(f_1993) <- c("code", "year", "totalincome")
   f_1993 <- merge(codes, f_1993, by="code")
   ##Total Income 2000-2012
-  income <- subset(Budget2000_2012, COD_CUE2=="A", select = c("coddep", "code", 2000:2012))
+  income <- subset(Budget_2000_2017, CdigoCuenta=="A", select = c("coddep", "code", 2000:2015))
   income <- melt(income, id=c("coddep", "code"))
   colnames(income) <- c("dpto", "code", "year", "totalincome")
   ##Merging Total Income
@@ -99,7 +99,7 @@ nl_col_growth <- function(year1, year2, electoral){
   colnames(f_1993) <- c("code", "year", "royalty")
   f_1993 <- merge(codes, f_1993, by="code")
   ##Royalties 2000-2012
-  income <- subset(Budget2000_2012, COD_CUE2=="D1000", select = c("coddep", "code", 2000:2012))
+  income <- subset(Budget_2000_2017, CdigoCuenta=="D1000", select = c("coddep", "code", 2000:2015))
   income <- melt(income, id=c("coddep", "code"))
   colnames(income) <- c("dpto", "code", "year", "royalty")
   ##Merging Royalties
@@ -119,6 +119,7 @@ nl_col_growth <- function(year1, year2, electoral){
   fiscal$cur_transferspc <- fiscal$cur_transfers.real*1000000/fiscal$population
   fiscal$royaltypc <- fiscal$royalty.real*1000000/fiscal$population
   
+  ##GDP Calculations
   ##Departmental Tax
   deptax <- aggregate(fiscal$taxes.real, by=list(dpto=fiscal$dpto, year=fiscal$year), FUN=sum)
   colnames(deptax)[3] <- "deptax"
@@ -127,15 +128,16 @@ nl_col_growth <- function(year1, year2, electoral){
   ##Departmental GDP
   depgdp <- melt(gdpdepartmental, id="dpto")
   colnames(depgdp) <- c("dpto", "year", "depgdp")
-  fiscal <- merge(fiscal, depgdp, by=c("dpto", "year"))
+  fiscal <- merge(fiscal, depgdp, by=c("dpto", "year"), all = TRUE)
   fiscal$mungdp <- fiscal$gdpshare*fiscal$depgdp*1000000
   fiscal$gdppc <- fiscal$mungdp/fiscal$population
   
   fiscal$year <- as.numeric(fiscal$year)
-  for(i in 1:20){
+  for(i in 1:23){
     fiscal$year[fiscal$year==i] <- 1992+i
   }
   fiscal <- subset(fiscal, year<=year2 & year>=year1-1)
+  
   fiscal <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
@@ -175,32 +177,49 @@ nl_col_growth <- function(year1, year2, electoral){
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
     mutate(roy.trnf.chg=(log(royaltypc)-log(lag(royaltypc, n=(n+1), default = first(royaltypc)))))
-
   
   fiscal <- subset(fiscal, year==year2, select = c(code, royalties.avg, cur.transfers.avg, gdp.gr, cap.transfers.avg, fiscal.chg, cur.trnf.chg, cap.trnf.chg, roy.trnf.chg))
-  fiscal$gdp.gr[fiscal$gdp.gr==-1] <- NA
+  fiscal$gdp.gr[fiscal$gdp.gr<=-1 | fiscal$gdp.gr>=1] <- NA
   fiscal$gdp.gr[fiscal$gdp.gr==Inf] <- NA
-  fiscal$gdp.gr[fiscal$gdp.gr==-Inf] <- 0
+  fiscal$gdp.gr[fiscal$gdp.gr==-Inf] <- NA
   fiscal[is.na(fiscal)] <- NA
   fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-1] <- NA
   fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==Inf] <- NA
-  fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-Inf] <- 0
+  fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-Inf] <- NA
   fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-1] <- NA
   fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==Inf] <- NA
-  fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-Inf] <- 0
+  fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-Inf] <- NA
   fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-1] <- NA
   fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==Inf] <- NA
-  fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-Inf] <- 0
+  fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-Inf] <- NA
+
+  if(year2==2015){
+    valueadded$codmpio <- as.numeric(valueadded$codmpio)
+    colnames(valueadded)[3] <- "code"
+    valueadded <- merge(valueadded, population, by=c("year", "code"))
+    valueadded$gdppc <- valueadded$valueadded*1000000000/valueadded$population
+    valueadded <- valueadded %>%
+      group_by(code) %>%
+      arrange(year, .by_group=TRUE) %>%
+      mutate(gdp.gr=(log(gdppc)-log(lag(gdppc, n=1, default = first(gdppc)))))
+    valueadded <- subset(valueadded, year==2015) 
+    fiscal <- merge(fiscal, valueadded, by="code")
+    fiscal <- fiscal[c(1:3, 17, 5:9)]
+    colnames(fiscal)[4] <- "gdp.gr" 
+  }
   
   fiscal <<- fiscal
   
   elect <- electoral
   colnames(elect)[3] <- "code"
   nl1 <- subset(nl, year==(year1+1), select = c(code, g1))
+  if (year2==2015){nl2 <- subset(nl, year==2013, select = c(code, gr_avg))}
+  else{
   nl2 <- subset(nl, year==year2+1, select = c(code, gr_avg))
+  }
   nl3 <- merge(nl2, nl1, by="code")
   nl3 <- merge(nl3, fiscal, by="code")
-  rds <- merge(elect, nl3, by="code", all=FALSE)
+  rds <<- merge(elect, nl3, by="code", all=FALSE)
   if (!exists("rd_final")){
     rd_final <- NA
     rd_final <<- rds

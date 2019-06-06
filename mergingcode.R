@@ -14,7 +14,7 @@ nl_col_growth <- function(year1, year2, electoral){
   nl <- nl %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(gr_avg=logint-lag(logint, n=(n+1), default = first(logint)))
+    mutate(gr_avg=(logint-lag(logint, n=(n+1), default = first(logint)))/n)
   
   ##Code
   codes <- codes
@@ -129,13 +129,14 @@ nl_col_growth <- function(year1, year2, electoral){
   depgdp <- melt(gdpdepartmental, id="dpto")
   colnames(depgdp) <- c("dpto", "year", "depgdp")
   fiscal <- merge(fiscal, depgdp, by=c("dpto", "year"), all = TRUE)
-  fiscal$mungdp <- fiscal$gdpshare*fiscal$depgdp*1000000
+  fiscal$mungdp <- fiscal$gdpshare*fiscal$depgdp*1000000000
   fiscal$gdppc <- fiscal$mungdp/fiscal$population
   
   fiscal$year <- as.numeric(fiscal$year)
   for(i in 1:23){
     fiscal$year[fiscal$year==i] <- 1992+i
   }
+  
   fiscal <- subset(fiscal, year<=year2 & year>=year1-1)
   
   fiscal <- fiscal %>%
@@ -156,40 +157,40 @@ nl_col_growth <- function(year1, year2, electoral){
   fiscal <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(gdp.gr=(log(gdppc)-log(lag(gdppc, n=(n+1), default = first(gdppc)))))
+    mutate(gdp.gr=(log(gdppc)-log(lag(gdppc, n=(n+1), default = first(gdppc))))/n)
   
   fiscal <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(fiscal.chg=fiscal.ind-lag(fiscal.ind, n=(n+1), default = first(fiscal.ind)))
+    mutate(fiscal.chg=(fiscal.ind-lag(fiscal.ind, n=(n+1), default = first(fiscal.ind)))/n)
   
   fiscal  <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(cur.trnf.chg=(log(cur_transferspc)-log(lag(cur_transferspc, n=(n+1), default = first(cur_transferspc)))))
+    mutate(cur.trnf.chg=(log(cur_transferspc)-log(lag(cur_transferspc, n=(n+1), default = first(cur_transferspc))))/n)
   
   fiscal  <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(cap.trnf.chg=(log(cap_transferspc)-log(lag(cur_transferspc, n=(n+1), default = first(cap_transferspc)))))
+    mutate(cap.trnf.chg=(log(cap_transferspc)-log(lag(cur_transferspc, n=(n+1), default = first(cap_transferspc))))/n)
   
   fiscal  <- fiscal %>%
     group_by(code) %>%
     arrange(year, .by_group=TRUE) %>%
-    mutate(roy.trnf.chg=(log(royaltypc)-log(lag(royaltypc, n=(n+1), default = first(royaltypc)))))
+    mutate(roy.trnf.chg=(log(royaltypc)-log(lag(royaltypc, n=(n+1), default = first(royaltypc))))/n)
   
   fiscal <- subset(fiscal, year==year2, select = c(code, royalties.avg, cur.transfers.avg, gdp.gr, cap.transfers.avg, fiscal.chg, cur.trnf.chg, cap.trnf.chg, roy.trnf.chg))
-  fiscal$gdp.gr[fiscal$gdp.gr<=-1 | fiscal$gdp.gr>=1] <- NA
+  #fiscal$gdp.gr[fiscal$gdp.gr<=-1.2666759 | fiscal$gdp.gr>=3.2782200] <- NA
   fiscal$gdp.gr[fiscal$gdp.gr==Inf] <- NA
   fiscal$gdp.gr[fiscal$gdp.gr==-Inf] <- NA
   fiscal[is.na(fiscal)] <- NA
-  fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-1] <- NA
+  #fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-1] <- NA
   fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==Inf] <- NA
   fiscal$cur.trnf.chg[fiscal$cur.trnf.chg==-Inf] <- NA
-  fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-1] <- NA
+  #fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-1] <- NA
   fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==Inf] <- NA
   fiscal$cap.trnf.chg[fiscal$cap.trnf.chg==-Inf] <- NA
-  fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-1] <- NA
+  #fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-1] <- NA
   fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==Inf] <- NA
   fiscal$roy.trnf.chg[fiscal$roy.trnf.chg==-Inf] <- NA
 
@@ -201,14 +202,13 @@ nl_col_growth <- function(year1, year2, electoral){
     valueadded <- valueadded %>%
       group_by(code) %>%
       arrange(year, .by_group=TRUE) %>%
-      mutate(gdp.gr=(log(gdppc)-log(lag(gdppc, n=1, default = first(gdppc)))))
+      mutate(gdp.gr=(log(gdppc)-log(lag(gdppc, n=1, default = first(gdppc))))/n)
     valueadded <- subset(valueadded, year==2015) 
     fiscal <- merge(fiscal, valueadded, by="code")
     fiscal <- fiscal[c(1:3, 17, 5:9)]
     colnames(fiscal)[4] <- "gdp.gr" 
   }
   
-  fiscal <<- fiscal
   
   elect <- electoral
   colnames(elect)[3] <- "code"
@@ -219,7 +219,7 @@ nl_col_growth <- function(year1, year2, electoral){
   }
   nl3 <- merge(nl2, nl1, by="code")
   nl3 <- merge(nl3, fiscal, by="code")
-  rds <<- merge(elect, nl3, by="code", all=FALSE)
+  rds <- merge(elect, nl3, by="code", all=FALSE)
   if (!exists("rd_final")){
     rd_final <- NA
     rd_final <<- rds
